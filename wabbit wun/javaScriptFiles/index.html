@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="shortcut icon" href="../assets/images/carrotpick.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./style.css">    
+    <title>Carrot Run</title>
+</head>
+<body>
+    <img src="../assets/images/grass.png" id="grass">
+    <img src="../assets/images/background.png" id="sprite">
+    <img src="../assets/images/player.png" id="player">
+    <img src="../assets/images/carrot.png" id="carrot">
+    <img src="../assets/images/enemy_plant.png" id="Enemy_plant">
+    <img src="../assets/images/fire.png" id="fire">
+    <img src="../assets/images/hearts.png" id="heart">
+    <img src="../assets/images/spike.png" id="spike">
+    <img src="../assets/images/boom.png" id="boom">
+    <img src="../assets/images/blue star.png" id="star">
+    <img src="../assets/images/platform.png" id="plat">
+
+    <audio src="../assets/sounds/EnemyShoot.wav" id="enemyShootSound"></audio>
+    <audio src="../assets/sounds/jump.wav" id="JumpSound"></audio>
+    <audio src="../assets/sounds/carrotCrunch2.mp3" id="carrotCrunch"></audio>
+    <audio src="../assets/sounds/Hit.wav" id="hitSound"></audio>
+    <audio src="../assets/sounds/starSound.mp3" id="starSound"></audio>
+    <audio src="../assets/sounds/enemyDie.mp3" id="enemyDie"></audio>
+    <audio src="../assets/sounds/dash.mp3" id="dashSound"></audio>
+    <audio src="../assets/sounds/deadMusic.wav"></audio>
+
+    <canvas id="canvas1"></canvas>
+<script>
+var deadMusic = new Audio();
+var backgroundMusic = new Audio();
+var pausedMusic = new Audio();
+deadMusic.src = '../assets/sounds/deadMusic.wav';
+backgroundMusic.src = '../assets/sounds/intro.mp3';
+pausedMusic.src = '../assets/sounds/pausedMusic.mp3';
+document.getElementById('carrotCrunch').volume = 0.6
+document.getElementById('enemyShootSound').volume = 0.5;
+document.getElementById('hitSound').volume = 0.7;
+document.getElementById('JumpSound').volume = 0.35;
+deadMusic.loop = true;
+backgroundMusic.loop = true;
+pausedMusic.loop = true;
+backgroundMusic.autoplay = true;
+let inter = setInterval(()=>{
+try{backgroundMusic.play();
+}catch(ee){
+}
+},500);
+backgroundMusic.onplay = function(){
+clearInterval(inter);
+}
+backgroundMusic.play();
+</script>
+
+<script src="./UI.js"></script>
+<script src="./Grass.js"></script>
+<script src="./groundParticle.js"></script>
+<script src="./Exsplosion.js"></script>
+<script src="./movingPlatform.js"></script>
+<script src="./hearts.js"></script>
+<script src="./boom.js"></script>
+<script src="./Particles.js"></script>
+<script src="./Input.js"></script>
+<script src="./Carrot.js"></script>
+<script src="./Star.js"></script>
+<script src="./Enemy.js"></script>
+<script src="./starBullet.js"></script>
+<script src="./background.js"></script>
+<script src="./playerState.js"></script>
+<script src="./player.js"></script>
+<script src="./main.js"></script>
+</body>
+</html>
