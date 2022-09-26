@@ -1,3 +1,4 @@
+let game;
 window.addEventListener('load', function(){
     const canvas = this.document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
@@ -5,7 +6,7 @@ window.addEventListener('load', function(){
     canvas.height = 866;
 
     class Game {
-        constructor(width,height){
+        constructor(width, height){
             this.width = width;
             this.height = height;
             this.maxparticles = 450;
@@ -16,6 +17,7 @@ window.addEventListener('load', function(){
             this.time = 30000;
             this.maxtime = 30000;
             this.gameover = false;
+            this.crown = null;
 
             this.currentLevel = 0;
             this.wallsRemoved = false;
@@ -54,7 +56,7 @@ window.addEventListener('load', function(){
             this.grasses = [];
             this.input = new InputHandler();
             this.UI = new UI(this);
-            this.player = new Player(this, 420, 480);
+            this.player = new Player(this, 450, 480);
             this.background = new BackGround(this);
 
         }
@@ -67,6 +69,7 @@ window.addEventListener('load', function(){
             this.grasses.forEach(grass => grass.draw(context));
             this.platforms.forEach(platform => platform.draw(context));
             this.player.draw(context);
+            if(this.crown)this.crown.draw(context);
             this.particles.forEach(particle => particle.draw(context));
             this.enemies.forEach(enemy => enemy.draw(context));
             this.ammos.forEach(ammo => ammo.draw(context));
@@ -86,6 +89,7 @@ window.addEventListener('load', function(){
             if(this.particles.length > this.maxparticles){
                 this.particles.length = this.maxparticles;
             }
+            if(this.crown)this.crown.update(deltatime);
             this.bullets.forEach(bullet => bullet.update(deltatime));
             this.ammos.forEach(ammo => ammo.update(deltatime, this));
             this.starExsplosions.forEach(exsplosion => exsplosion.update(deltatime));
@@ -136,6 +140,7 @@ window.addEventListener('load', function(){
             this.spikes = [];
             this.stars = [];
             this.platforms = [];
+            this.crown = null;
             this.player = new Player(this, x, y);
             if(this.currentLevel < Number(newLevel)){
                 this.player.speed = -1;
@@ -184,12 +189,12 @@ window.addEventListener('load', function(){
                     return 'TOP';
                 }
     
-                if((rect1.x <= rect2.x + w2 && rect2.x + w2 < rect1.x + this.overLapMargin * 7)
+                if((rect1.x <= rect2.x + w2 && rect2.x + w2 < rect1.x + this.overLapMargin * 15)
                 && (Math.abs(rect1.y + h1 - rect2.y) > this.overLapMargin * 2)){
                     return 'LEFT';
                 }
     
-                if((rect1.x + w1 >= rect2.x && rect1.x + w1 < rect2.x + this.overLapMargin * 7)
+                if((rect1.x + w1 >= rect2.x && rect1.x + w1 < rect2.x + this.overLapMargin * 15)
                 && (Math.abs(rect1.y + h1 - rect2.y) > this.overLapMargin * 2)){
                     return 'RIGHT';
                 }
@@ -290,7 +295,7 @@ window.addEventListener('load', function(){
         }, 200);
     };
 
-    const game = new Game(canvas.width, canvas.height);      
+    game = new Game(canvas.width, canvas.height);      
     let lastime = 0;
     async function animate(timestamp){
         const deltatime = timestamp - lastime;

@@ -117,7 +117,7 @@ class GroundEnemy extends Enemy{
         if(this.justSawCountDown <= 0){
             this.game.enemies.unshift(new FireBall(this.game, this.x, this.y, this.Dir));
             this.game.sounds.enemyShootSound.cloneNode(true).play();
-            this.justSawCountDown = 190;
+            this.justSawCountDown = 200;
             this.justSaw = false;
         }
         if(this.game.rectangularCollision(this, this.game.player)){
@@ -136,39 +136,26 @@ class GroundEnemy extends Enemy{
                 newSplash.speedy *= 2;
                 this.game.particles.unshift(newSplash);
             }
-            
-            const collidingSide = this.game.Collidingside(this, this.game.player);
             const playersCollidingSide = this.game.Collidingside(this.game.player, this);
 
-            switch (collidingSide) {
-                case 'TOP':
+            switch (playersCollidingSide) {
+                case 'BOTTOM':
                     this.game.player.vy = -20;
-                    this.game.player.handleHit();
-                    break;
-                case 'LEFT':
-                    //this.game.player.x = this.x - this.game.player.width - 1;
-                    //stop player from moving further into object
-                    this.game.player.x -= 24;
-                    this.game.player.speed = -20;
-                    this.game.player.handleHit();
                     break;
                 case 'RIGHT':
-                    //this.game.player.x = this.x + this.width + 1;
-                    //stop player from moving further into object
-                    this.game.player.x += 24;
-                    this.game.player.speed = 20;
-                    this.game.player.handleHit();
-                case 'BOTTOM':
-                    if(playersCollidingSide === 'TOP'){
+                    this.game.player.speed = - this.game.player.maxspeed * 2;
+                    break;
+                case 'LEFT':
+                    this.game.player.speed = this.game.player.maxspeed * 2;
+                case 'TOP':
                         this.game.player.y = this.y + this.height + 10;
                         this.game.player.vy = 5;
                         this.game.player.x -= (this.x - this.game.player.x);
-                        this.game.player.handleHit();
-                    }
                     break;
                 default:
                     break;
             }
+            if(playersCollidingSide)this.game.player.handleHit();
         };
 
         if (this.game.player.y + this.game.player.height - 30 > this.y && this.y + this.height > this.game.player.y + 50){
@@ -196,18 +183,22 @@ class GroundEnemy extends Enemy{
     }
 }
 
-class Spike extends Enemy{
+class Spike{
     constructor(game, x, y){
-        super(game, x ,y);
-        this.image = document.getElementById('spike');
+        this.game = game;
         this.x = x;
         this.y = y + 33;
         this.origin = {x,y};
         this.width = 96;
         this.height = 66;
         this.markedForDeletion = false;
+        this.image = document.getElementById('spike');
     }
 
+    draw(context){
+        //if (this.game.input.debug) { context.strokeRect(this.x, this.y, this.width ,this.height); };
+        context.drawImage(this.image, this.x, this.y,this.width,this.height);
+    }
     update(deltatime){
         this.game.platforms.forEach(platform => {
             if((Math.abs(platform.y - (this.y + this.height)) < 10) && Math.abs(platform.x - this.x) < this.width){
@@ -218,8 +209,6 @@ class Spike extends Enemy{
 
         if(this.game.rectangularCollision(this, this.game.player)){
             const collidingSide = this.game.Collidingside(this, this.game.player);
-            const playersCollidingSide = this.game.Collidingside(this.game.player, this);
-            console.log(collidingSide, playersCollidingSide)
             switch (collidingSide) {
                 case 'TOP':
                     this.game.player.vy = -20;
@@ -231,25 +220,18 @@ class Spike extends Enemy{
                     this.game.player.speed = (this.game.player.speed < 0)? 0:this.game.player.speed;
                     return;
                 case 'RIGHT':
-                    this.game.player.x = this.x + this.width + 1
+                    this.game.player.x = this.x + this.width + 1;
                     //stop player from moving further into object
                     this.game.player.speed = (this.game.player.speed > 0)? 0:this.game.player.speed;
                     return;
                 case 'BOTTOM':
-                    if(playersCollidingSide === 'TOP'){
-                        this.game.player.vy = 2;
-                        this.game.player.y = this.y + this.height + 5;
-                        //game.player.handleHit();
-                    }
+                    this.game.player.vy = 2;
+                    this.game.player.y = this.y + this.height + 5;
+                    //this.game.player.handleHit();
                     return;
                 default:
                     return;
             }
         }
-    }
-
-    draw(context){
-        if (this.game.input.debug)context.strokeRect(this.x, this.y, this.width, this.height);
-        context.drawImage(this.image, this.x, this.y,this.width,this.height);
     }
 }

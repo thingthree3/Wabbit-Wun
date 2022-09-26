@@ -5,7 +5,7 @@ class UI{
         this.fontFamily = "Helvetica";
         this.heartImage = document.getElementById('heart1');
         this.heartSize = 20;
-        this.pausedOffset = 0;
+        this.pausedTimerOffset = 0;
         this.messagesOnScreen = [];
 
         this.lastMessage = '';
@@ -20,19 +20,7 @@ class UI{
     draw(context){
         context.save();
         this.HandleDisplayMessage(context);
-        if(this.game.input.isPaused){
-            this.pausedOffset = new Date() - this.game.pausedTimer;
-            context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            context.fillRect(0, 0, this.game.width, this.game.height);
-
-            context.font = '100' + 'px ' + this.fontFamily;
-            context.textAlign = 'center';
-            context.fillStyle = `lightblue`;
-            context.fillText('Paused', this.game.width / 2, this.game.height / 2);
-            context.font = '30' + 'px ' + this.fontFamily;
-            context.fillText(`Press: 'p' To Unpause.`, this.game.width / 2, this.game.height / 2 + 40);
-            //return;
-        }
+        this.HandleGamePaused(context);
 
         //context.shadowOffsetX = 2;
         //context.shadowOffsetY = 2;
@@ -46,7 +34,7 @@ class UI{
         context.font = 40 + 'px ' + this.fontFamily;
         context.textAlign = 'left';
         context.fillStyle = 'rgb(57, 255, 20)';
-        context.fillText('Time: ' + ((new Date() - this.time - this.pausedOffset) * 0.001).toFixed(1), 20, 90);
+        context.fillText('Time: ' + ((new Date() - this.time - this.pausedTimerOffset) * 0.001).toFixed(1), 20, 90);
 
         context.font = 40 + 'px ' + this.fontFamily;
         context.textAlign = 'left';
@@ -95,5 +83,23 @@ class UI{
                 context.fillText(message.text, x + width / 2, y + messageRow[message.id] * messageSize);
             }
         });
+    }
+
+    HandleGamePaused(context){
+        if(!this.game.input.isPaused)return;
+
+        //blur the screen
+        this.pausedTimerOffset = new Date() - this.game.pausedTimer;
+        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.fillRect(0, 0, this.game.width, this.game.height);
+        //show paused message
+        context.font = '100' + 'px ' + this.fontFamily;
+        context.textAlign = 'center';
+        context.fillStyle = `lightblue`;
+        context.fillText('Paused', this.game.width / 2, this.game.height / 2);
+        //show how to unpase
+        context.font = '30' + 'px ' + this.fontFamily;
+        context.fillText(`Press: 'p' To Unpause.`, this.game.width / 2, this.game.height / 2 + 40);
+        //return;
     }
 }

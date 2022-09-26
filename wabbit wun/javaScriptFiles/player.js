@@ -14,6 +14,12 @@ class Player{
         this.frametimer = 0;
         this.frameInterval = 1000/this.fps;
         this.hitCooldown = 0;
+        this.hitCooldownInterval = 1000;
+
+        this.isAllowedToMove = true;
+        this.boostCoolDownTimer = 0;
+        this.boostCoolDownInterval = 400;
+        this.attackCooldownInterval = 750;
 
         //`again... Really?╭∩╮( •̀_•́ )╭∩╮`
         this.textColor = 'rgb(254, 1, 154)';
@@ -80,7 +86,6 @@ class Player{
         this.weight = 1;
         this.isOnGround = false;
         this.lastDirection = 'Right'
-        this.boostCoolDownInterval = 0;
         
         this.Dir = 'Right'
         this.stillFacingSameDir = 'Right'
@@ -97,7 +102,8 @@ class Player{
     draw(context){
         context.save();
         if (this.game.input.debug) { context.strokeRect(this.x, this.y, this.width ,this.height); };
-        context.drawImage(this.image,
+        context.drawImage(
+            this.image,
             this.framex * this.width,
             this.framey * this.height,
             this.width,
@@ -106,19 +112,19 @@ class Player{
             this.y,
             this.width,
             this.height
-            );
-            if(this.wasHit){
-                context.fillStyle = 'rgba(255,0,0,0.4)';
-                context.fillRect(this.x + 9, this.y + 10, this.width - 13, this.height - 10);
-            }
+        );
         context.restore();
     }
 
     update(deltatime, solidObjects, input){
-    // Handle 
+        // Handle object collisions 
         this.checkCollisions(solidObjects.concat(this.game.platforms));
-        this.currentState.handleInput(input);
+        if(this.isAllowedToMove) this.currentState.handleInput(input);
 
+        // Handle Horizontal Movement And Player's Speed's
+        if(this.isAllowedToMove) this.HandlePlayerMovement(input, deltatime);
+
+        //handle player damage cooldown
         if(this.wasHit){
             if(this.wasHitTimer < this.wasHitInterval){
                 this.wasHitTimer+=deltatime;
@@ -128,62 +134,7 @@ class Player{
             }
         }
 
-    // Handle Horizontal Movement And Player's Speed's        
-        if (input.right && Math.abs(this.speed) < this.maxspeed){
-            this.speed += (this.maxspeed - Math.abs(this.speed)) * 0.15;
-        }
-        else if (input.left && Math.abs(this.speed) < this.maxspeed){
-            this.speed += -(this.maxspeed - Math.abs(this.speed)) * 0.15;
-        }
-        else if(Math.abs(this.speed) < 0.5){this.speed = 0;}
-        else {this.speed *= this.friction;}
-
-        if((this.Dir === 'Right' && this.speed < 0)||(this.Dir === 'Left' && this.speed > 0)){this.speed *= this.friction;}
-
-        if(input.dash && this.boostCoolDownInterval <= 0){
-            this.speed = (this.Dir == 'Right')?21:-21;
-            this.game.sounds.dashSound.cloneNode(true).play();
-            this.boostCoolDownInterval = 400;
-            this.game.boosts.unshift(new Boom(this.x + this.width / 2, this.y + this.hearts / 2 + 25));
-        }
-
-        if(this.boostCoolDownInterval > 0){
-            this.boostCoolDownInterval -= deltatime;
-        }
-
-        if(input.attack && this.attackCooldown <= 0 && this.game.ammos.length > 0){
-            this.HandleeMessages('UsePowerUpMessages');
-            //this.game.fireballs.forEach(fireball => fireball.markedForDeletion = true);
-            //this.game.enemies.forEach(enemy => enemy.markedForDeletion = true);
-            //this.game.spikes.forEach(spike => spike.markedForDeletion = true);
-            //this.game.starExsplosions.unshift(new Exsplosion(this.x + this.width / 2, this.y + this.height / 2));
-            this.game.bullets.unshift(new Bullet(this.game, this.x, this.y, this.Dir));
-            this.attackCooldown = 750;
-            const deletedHEart = this.game.ammos.pop();
-            for (let i = 0; i < 70; i++) {
-                this.game.goundParticles.unshift(new GoundParticle(
-                    deletedHEart.x + deletedHEart.width / 2 - 10,
-                    deletedHEart.y + deletedHEart.height / 2,
-                    [`rgb(83, 173, 254)`, `rgb(122, 239, 255)`],
-                    false
-                    ));
-
-            }
-        }
-        if(this.attackCooldown > 0) this.attackCooldown-= deltatime;
-
-    // Handle Direction Change's
-        if(input.left && this.lastDirection === 'Right') { this.Dir = 'Left'; this.lastDirection = 'Left';};
-        if(input.right && this.lastDirection === 'Left') { this.Dir = 'Right'; this.lastDirection = 'Right';};
-        // if the direction we were facing has changed flipp player
-        this.x += this.speed;
-        if(this.Dir !== this.stillFacingSameDir){
-            this.stillFacingSameDir = this.Dir;
-        // Re-Enter PLayer-State so player image Flipps
-            this.currentState.enterState(this.currentState.name);
-        }
-
-    // Handle HorizontalVertical movement And Falling
+    // Handle applying gravity 
         if(this.vy >= this.maxFallSpeed) this.vy = this.maxFallSpeed;
         if (!this.isOnGround){this.vy++;} //+= this.weight;
         this.y += this.vy;
@@ -204,9 +155,9 @@ class Player{
         for (const object of objects) {
             const collidingSide = this.game.Collidingside(this, object);
 
-            if(collidingSide === ''){continue;}
+            if(!collidingSide) continue;
             
-            // if he object is a specal floating platform if should be jumped through
+            // if the object is a specal floating platform it should be jumped through
             if(object.id.slice(0,2) === '48'){
                 if(collidingSide === 'BOTTOM' && this.vy >= 0){
                     if(object.id.includes('platform')){
@@ -228,48 +179,49 @@ class Player{
             
             if(object.id.includes('door')){
                 this.game.enterNewlevel(object.id.match(/0[0-9]+/g));
-                continue;
+                return;
             };
 
-            if(collidingSide === 'TOP'){
-                this.vy = (this.vy < 0)? 0:this.vy;
-                continue;
-            }
+            switch (collidingSide) {
+                case 'TOP':
+                    this.vy = (this.vy < 0)? 0:this.vy;
+                    break;
+                case 'BOTTOM':
+                    this.y = object.y - this.height + 1;
+                    this.isOnGround = true;
+                    this.vy = 0;
+                    break;
+                case 'LEFT':
+                    this.x = object.x + object.size - 1;
+                    //stop player from moving further into object
+                    this.speed = (this.speed < 0)? 0:this.speed;
+                    break;
+                case 'RIGHT':
+                    this.x = object.x - this.width + 1
+                    //stop player from moving further into object
+                    this.speed = (this.speed > 0)? 0:this.speed;
+                    break;
 
-            if(collidingSide === 'BOTTOM'){
-                this.y = object.y - this.height + 1;
-                this.isOnGround = true;
-                this.vy = 0;
-                continue;
-            }
-
-            if(collidingSide === 'LEFT'){
-                this.x = object.x + object.size - 1;
-                //stop player from moving further into object
-                this.speed = (this.speed < 0)? 0:this.speed;
-                continue;
-            }
-
-            if(collidingSide === 'RIGHT'){
-                this.x = object.x - this.width + 1
-                //stop player from moving further into object
-                this.speed = (this.speed > 0)? 0:this.speed;
-                continue;
+                default:
+                    break;
             }
         }
     }
 
     handleHit(){
-        if(new Date() - this.hitCooldown > 1000){
-            this.hitCooldown = new Date();
-        }else{return;}
+        if(new Date() - this.hitCooldown < this.hitCooldownInterval) return;
+        
+        this.hitCooldown = new Date();
+        //hit sound doesn't need clone because hit interval lasts longer than the time the sound plays
         hitSound.play();
         if(this.game.hearts.length === 0){
             this.game.gameover = true;
             return;
         }
-        if(Math.random() < 0.3){this.HandleeMessages('hurtMessages')};
-        const heart = this.game.hearts.pop();
+        
+        if(Math.random() < 0.3) this.HandleeMessages('hurtMessages');
+
+        const RemovedHeart = this.game.hearts.pop();
         for(let i=0; i<35;i++){this.game.goundParticles.unshift(new GoundParticle(
             this.x + this.width / 2,
             this.y,
@@ -279,13 +231,70 @@ class Player{
         
         for (let i = 0; i < 140; i++) {
             this.game.particles.unshift(new Splash(
-            heart.x + heart.width / 2,
-            heart.y + heart.height / 2,
+            RemovedHeart.x + RemovedHeart.width / 2,
+            RemovedHeart.y + RemovedHeart.height / 2,
             null,
             `rgba(235, 30, 37, 0.8)`,
             false,
             10
         ));
+        }
+    }
+
+    HandlePlayerMovement(input, deltatime){
+        //Handle horizontal movement
+        
+        if (input.right && Math.abs(this.speed) < this.maxspeed){
+            this.speed += (this.maxspeed - Math.abs(this.speed)) * 0.15;
+        }
+        else if (input.left && Math.abs(this.speed) < this.maxspeed){
+            this.speed += -(this.maxspeed - Math.abs(this.speed)) * 0.15;
+        }
+        else if(Math.abs(this.speed) < 0.5){this.speed = 0;}
+        
+        //handle friction xox slowly stop player
+        else this.speed *= this.friction;
+        if((this.Dir === 'Right' && this.speed < 0)||(this.Dir === 'Left' && this.speed > 0)){this.speed *= this.friction;}
+        this.x += this.speed;
+
+        //Handle dash xoxx space bar speed bost
+        if(input.dash && this.boostCoolDownTimer >= this.boostCoolDownInterval){
+            this.speed = (this.Dir == 'Right')?21:-21;
+            this.game.sounds.dashSound.cloneNode(true).play();
+            this.boostCoolDownTimer = 0;
+            this.game.boosts.unshift(new Boom(this.x + this.width / 2, this.y + this.hearts / 2 + 25));
+        } else if(this.boostCoolDownTimer < this.boostCoolDownInterval) this.boostCoolDownTimer += deltatime;
+
+        //Handle attack and attack animations
+        if(
+            input.attack
+            &&this.attackCooldown >= this.attackCooldownInterval
+            &&this.game.ammos.length > 0
+            ){
+            this.HandleeMessages('UsePowerUpMessages');
+            this.game.bullets.unshift(new Bullet(this.game, this.x, this.y, this.Dir));
+            this.attackCooldown = 0;
+            const deletedHEart = this.game.ammos.pop();
+            for (let i = 0; i < 70; i++) {
+                this.game.goundParticles.unshift(new GoundParticle(
+                    deletedHEart.x + deletedHEart.width / 2 - 10,
+                    deletedHEart.y + deletedHEart.height / 2,
+                    [`rgb(83, 173, 254)`, `rgb(122, 239, 255)`],
+                    false
+                    ));
+
+            }
+        }else if(this.attackCooldown < this.attackCooldownInterval) this.attackCooldown += deltatime;
+
+
+        // Handle Direction Change's
+        if(input.left && this.lastDirection === 'Right') { this.Dir = 'Left'; this.lastDirection = 'Left';};
+        if(input.right && this.lastDirection === 'Left') { this.Dir = 'Right'; this.lastDirection = 'Right';};
+        // if the direction we were facing has changed flipp player
+        if(this.Dir !== this.stillFacingSameDir){
+            this.stillFacingSameDir = this.Dir;
+        // Re-Enter PLayer-State so player image Flipps
+        this.currentState.enterState(this.currentState.name);
         }
     }
 
