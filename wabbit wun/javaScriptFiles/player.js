@@ -23,6 +23,14 @@ class Player{
 
         //`again... Really?╭∩╮( •̀_•́ )╭∩╮`
         this.textColor = 'rgb(254, 1, 154)';
+        this.responseMessages = [
+            ':((',
+            'Omg why are they so mean? (⋟﹏⋞)',
+            "be Quiet you can't even move 💀",
+            "let's see if your still talking when i come back with a star",
+            'why do they always bully me? :<',
+            "why TF can they talk again? ._."
+        ];
         this.hurtMessages = [
             `Oww :(((`,
             'i Really want to Go Home (⋟﹏⋞)',
@@ -77,6 +85,7 @@ class Player{
 
         this.attackCooldown = 0;
         
+        this.dashSpeed = 25;
         this.friction = 0.90;
         this.maxFallSpeed = 20;
         this.maxJumpHeight = -20;
@@ -210,34 +219,18 @@ class Player{
 
     handleHit(){
         if(new Date() - this.hitCooldown < this.hitCooldownInterval) return;
+
+        this.game.minusHeart();
         
         this.hitCooldown = new Date();
-        //hit sound doesn't need clone because hit interval lasts longer than the time the sound plays
-        hitSound.play();
-        if(this.game.hearts.length === 0){
-            this.game.gameover = true;
-            return;
-        }
         
         if(Math.random() < 0.3) this.HandleeMessages('hurtMessages');
-
-        const RemovedHeart = this.game.hearts.pop();
+        
         for(let i=0; i<35;i++){this.game.goundParticles.unshift(new GoundParticle(
             this.x + this.width / 2,
             this.y,
             [`rgb(235, 30, 37)`, `rgb(255, 36, 41)`]
             ));
-        };
-        
-        for (let i = 0; i < 140; i++) {
-            this.game.particles.unshift(new Splash(
-            RemovedHeart.x + RemovedHeart.width / 2,
-            RemovedHeart.y + RemovedHeart.height / 2,
-            null,
-            `rgba(235, 30, 37, 0.8)`,
-            false,
-            10
-        ));
         }
     }
 
@@ -257,23 +250,33 @@ class Player{
         if((this.Dir === 'Right' && this.speed < 0)||(this.Dir === 'Left' && this.speed > 0)){this.speed *= this.friction;}
         this.x += this.speed;
 
+        // Handle Direction Change's
+        if(input.left && this.lastDirection === 'Right') { this.Dir = 'Left'; this.lastDirection = 'Left';};
+        if(input.right && this.lastDirection === 'Left') { this.Dir = 'Right'; this.lastDirection = 'Right';};
+        // if the direction we were facing has changed flipp player
+        if(this.Dir !== this.stillFacingSameDir){
+            this.stillFacingSameDir = this.Dir;
+        // Re-Enter PLayer-State so player image Flipps
+        this.currentState.enterState(this.currentState.name);
+        }
+
         //Handle dash xoxx space bar speed bost
-        if(input.dash && this.boostCoolDownTimer >= this.boostCoolDownInterval){
-            this.speed = (this.Dir == 'Right')?21:-21;
+        if(input.dash && this.boostCoolDownTimer <= 0){
+            this.speed = (this.Dir == 'Right')?this.dashSpeed:-this.dashSpeed;
             this.game.sounds.dashSound.cloneNode(true).play();
-            this.boostCoolDownTimer = 0;
+            this.boostCoolDownTimer = this.boostCoolDownInterval;
             this.game.boosts.unshift(new Boom(this.x + this.width / 2, this.y + this.hearts / 2 + 25));
-        } else if(this.boostCoolDownTimer < this.boostCoolDownInterval) this.boostCoolDownTimer += deltatime;
+        } else if(this.boostCoolDownTimer > 0) this.boostCoolDownTimer -= deltatime;
 
         //Handle attack and attack animations
         if(
             input.attack
-            &&this.attackCooldown >= this.attackCooldownInterval
+            &&this.attackCooldown <= 0
             &&this.game.ammos.length > 0
             ){
             this.HandleeMessages('UsePowerUpMessages');
             this.game.bullets.unshift(new Bullet(this.game, this.x, this.y, this.Dir));
-            this.attackCooldown = 0;
+            this.attackCooldown = this.attackCooldownInterval;
             const deletedHEart = this.game.ammos.pop();
             for (let i = 0; i < 70; i++) {
                 this.game.goundParticles.unshift(new GoundParticle(
@@ -284,26 +287,14 @@ class Player{
                     ));
 
             }
-        }else if(this.attackCooldown < this.attackCooldownInterval) this.attackCooldown += deltatime;
-
-
-        // Handle Direction Change's
-        if(input.left && this.lastDirection === 'Right') { this.Dir = 'Left'; this.lastDirection = 'Left';};
-        if(input.right && this.lastDirection === 'Left') { this.Dir = 'Right'; this.lastDirection = 'Right';};
-        // if the direction we were facing has changed flipp player
-        if(this.Dir !== this.stillFacingSameDir){
-            this.stillFacingSameDir = this.Dir;
-        // Re-Enter PLayer-State so player image Flipps
-        this.currentState.enterState(this.currentState.name);
-        }
+        }else if(this.attackCooldown > 0) this.attackCooldown -= deltatime;
     }
 
     HandleeMessages(messageName){
         this.game.addMessageToScreen(
             {
                 messagesChoice:this[messageName],
-                X:this.x + this.width / 2,
-                Y:this.y,
+                Id:'Player',
                 Color:this.textColor
             }
         )

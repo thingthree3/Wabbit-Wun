@@ -133,17 +133,34 @@ class Bullet{
             this.y + this.height / 2,
             [`rgb(83, 173, 254)`, `rgb(122, 239, 255)`]
             ));
-
-        this.game.enemies.forEach(enemy => {
-            if(this.game.rectangularCollision(this, enemy)){
-                if(enemy.origin){
-                    this.game.replaceInLevel.push(enemy.origin)
+            
+            this.game.enemies.forEach(enemy => {
+                if(this.game.rectangularCollision(this, enemy)){
+                    enemy.markedForDeletion = true;
+                    if(enemy.origin){
+                        this.game.replaceInLevel.push(enemy.origin);
                 }
-                enemy.markedForDeletion = true;
+                if(enemy.id){
+                    const randomMessage = this.game.randomMessage(enemy.DyingMessages);
+                    this.game.UI.messagesOnScreen.push(
+                        {
+                            text:randomMessage,
+                            spawnDate:new Date().getTime(),
+                            lifeSpan:1500 + randomMessage.split(' ').length * 250,
+                            id: enemy.id,
+                            color: 'red',
+                            style:'bold 20px Helvetica',
+                            width:enemy.width,
+                            x:enemy.x,
+                            y:enemy.y
+                        }
+                    );                        
+                }
+                this.game.addScore(enemy);
                 this.game.sounds.enemyDie.cloneNode(true).play();
                 this.game.starExsplosions.unshift(
                     new Exsplosion(
-                        enemy.x + ((enemy.width === undefined)? enemy.size:enemy.width) / 2,
+                        enemy.x + ((enemy.width)? enemy.width:enemy.size) / 2,
                         enemy.y,
                         `rgba(83, 173, 254, `,
                         6,

@@ -1,4 +1,4 @@
-class Enemy{
+﻿class Enemy{
     constructor(game, x, y){
         this.game = game;
         this.x = x;
@@ -43,16 +43,17 @@ class Enemy{
 }
 
 class FireBall{
-    constructor(game, x, y, dir){
+    constructor(game, x, y, dir, PerantId){
         this.game = game;
         this.x = x;
         this.y = y;
         this.Dir = dir;
+        this.PerantId = PerantId;
         this.size = 50;
-        this.speedx = (this.Dir === 'LEFT')? -4:4;
-        this.maxspeed = (this.Dir === 'LEFT')? -22:22;
+        this.speedx = (this.Dir === 'LEFT')? -6:6;
+        this.maxspeed = (this.Dir === 'LEFT')? -28:28;
         this.markedForDeletion = false;
-        this.acceluration = (this.Dir === 'LEFT')? -0.7:0.7;
+        this.acceluration = (this.Dir === 'LEFT')? -0.85:0.85;
     }
     update(deltatime){
         this.game.background.solidObjectsInLevel.forEach(object => {
@@ -64,6 +65,14 @@ class FireBall{
 
         if(this.game.rectangularCollision(this.game.player, this)){
             this.markedForDeletion = true;
+            const PerantEnemy = this.game.enemies.find(enemy => enemy.id == this.PerantId);
+            this.game.addMessageToScreen(
+                {
+                    messagesChoice:PerantEnemy.HitPlayerMessages,
+                    Id:this.PerantId
+                }
+            );
+            if(Math.random() > 0.5) setTimeout(() => this.game.player.HandleeMessages('responseMessages'), 400);
             if(this.Dir === 'LEFT'){
                 this.game.player.x -= 24;
                 this.game.player.speed = -20;                        
@@ -88,6 +97,25 @@ class FireBall{
 class GroundEnemy extends Enemy{
     constructor(game, x, y){
         super(game, x, y);
+        this.HitPlayerMessages = [
+            'Ezzz, get Sniped Nooob!',
+            'Me > You',
+            'Never seen Worse ;-;',
+            'I do like me some cocked Wabbit',
+            "I didn't think you would be this easy to hit...",
+            'Say bye bye to your Health :3',
+            'Go back to level 1 when?',
+            'Imagine Getting clapped 💀'
+        ];
+        this.DyingMessages = [
+            'Ayo Wtf?!?!!?!??! ',
+            "You fr pulled out a star that's crazy",
+            "Toxic e.e",
+            "Imagine needing me gone to win, Nub!",
+            "I'll be speaking with my lawyer about this.",
+            "i did't think you could hit me with that aim of yours 💀",
+            'Took you long enough XD'
+        ];
         this.width = 60;
         this.height = 87;
         this.x = x - this.width / 2 + 48;
@@ -97,7 +125,7 @@ class GroundEnemy extends Enemy{
         this.maxFrame = 1;
         this.coolDownInterval = 0;
         this.justSaw = false;
-        this.justSawCountDown = 200;
+        this.justSawCountDown = 300;
         this.Dir = 'LEFT';
     }
 
@@ -115,7 +143,7 @@ class GroundEnemy extends Enemy{
             this.justSawCountDown -= deltatime;
         }
         if(this.justSawCountDown <= 0){
-            this.game.enemies.unshift(new FireBall(this.game, this.x, this.y, this.Dir));
+            this.game.enemies.unshift(new FireBall(this.game, this.x, this.y, this.Dir, this.id));
             this.game.sounds.enemyShootSound.cloneNode(true).play();
             this.justSawCountDown = 200;
             this.justSaw = false;
@@ -148,14 +176,16 @@ class GroundEnemy extends Enemy{
                 case 'LEFT':
                     this.game.player.speed = this.game.player.maxspeed * 2;
                 case 'TOP':
+                    if(this.game.player.y >= this.y + this.height){
                         this.game.player.y = this.y + this.height + 10;
                         this.game.player.vy = 5;
                         this.game.player.x -= (this.x - this.game.player.x);
+                    }
                     break;
                 default:
                     break;
             }
-            if(playersCollidingSide)this.game.player.handleHit();
+            if(playersCollidingSide) this.game.player.handleHit();
         };
 
         if (this.game.player.y + this.game.player.height - 30 > this.y && this.y + this.height > this.game.player.y + 50){
@@ -168,7 +198,7 @@ class GroundEnemy extends Enemy{
 
             if(!this.justSaw && this.coolDownInterval <= 0){
                 this.justSaw = true;
-                this.coolDownInterval = 1700;
+                this.coolDownInterval = 2000;
                 //           2 seconds  ^
             }
         }

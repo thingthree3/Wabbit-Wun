@@ -51,16 +51,9 @@ document.getElementById('JumpSound').volume = 0.35;
 deadMusic.loop = true;
 backgroundMusic.loop = true;
 pausedMusic.loop = true;
-backgroundMusic.autoplay = true;
-let inter = setInterval(()=>{
-try{backgroundMusic.play();
-}catch(ee){
-}
-},500);
-backgroundMusic.onplay = function(){
-clearInterval(inter);
-}
-backgroundMusic.play();
+pausedMusic.autoplay = true;
+window.addEventListener("keypress", ({key}) => {pausedMusic.play();});
+window.addEventListener("click", event => {pausedMusic.play();});
 </script>
 
 <script src="./UI.js"></script>

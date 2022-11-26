@@ -29,7 +29,7 @@ window.addEventListener('load', function(){
                 JumpSound:document.getElementById('JumpSound'),
                 carrotCrunch:document.getElementById('carrotCrunch'),
                 hitSound:document.getElementById('hitSound'),
-            }
+            };
 
             this.speed = 0;
             this.overLapMargin = 6;
@@ -42,6 +42,7 @@ window.addEventListener('load', function(){
             this.enemyTimer = 0;
             this.enemeyInterval = 500;
             this.score = 0;
+            this.maxHearts = 6;
 
             this.fontColor = 'black';
 
@@ -58,6 +59,7 @@ window.addEventListener('load', function(){
             this.UI = new UI(this);
             this.player = new Player(this, 450, 480);
             this.background = new BackGround(this);
+	    this.timer = 0;
 
         }
 
@@ -129,8 +131,7 @@ window.addEventListener('load', function(){
 
         enterNewlevel([x, y, newLevel]){
             const PlayerIsJumping = this.player.vy < 0;
-            console.log(newLevel, this.currentLevel);
-            this.background.removeWallsInLevel();
+            this.background.reFactorLevels();
             this.wallsRemoved = false;
             this.goundParticles = [];
             this.grasses = [];
@@ -203,14 +204,30 @@ window.addEventListener('load', function(){
             return '';
         }
 
-        //addEnemy(){
-        //    if (this.speed>0 && Math.random() < 0.5) this.enemies.push(new GroundEnemy(this));
-        //    else if(this.speed > 0 )this.enemies.push(new ClimbingEnemy(this));
-        //    this.enemies.push(new FlyingEnemy(this));
-        //}
+        minusHeart(){
+            const RemovedHeart = this.hearts.pop();
+            
+            this.sounds.hitSound.cloneNode(true).play();
+            if(this.hearts.length === 0){
+                this.gameover = true;
+                return;
+            }
 
-        addHeart(){
-            const range = (this.hearts.length + 1 > 6)? 6 : this.hearts.length + 1;
+            for (let i = 0; i < 140; i++) {
+                this.particles.unshift(new Splash(
+                    RemovedHeart.x + RemovedHeart.width / 2,
+                    RemovedHeart.y + RemovedHeart.height / 2,
+                    null,
+                    `rgba(235, 30, 37, 0.8)`,
+                    false,
+                    10
+                ));
+            }
+        }
+
+        addHeart(amount=1){
+            if(this.hearts.length + amount > this.maxHearts) return;
+            const range = this.hearts.length + amount;
             this.hearts = [];
             for (let i = 0; i < range; i++){
                 var newHeart = new Heart(250 + 100 * i, 0);
@@ -220,7 +237,7 @@ window.addEventListener('load', function(){
 
         }
         
-        addMessageToScreen({messagesChoice, Color='black', Style='bold 20px Helvetica', Id=''}){
+        addMessageToScreen({messagesChoice, Id, Color='black', Style='bold 20px Helvetica'}){
             if(!messagesChoice)return;
             const randomMessage = this.randomMessage(messagesChoice);
             this.UI.messagesOnScreen.push(
@@ -292,13 +309,14 @@ window.addEventListener('load', function(){
             }else{
                 game.draw(ctx);
             }
-        }, 200);
+        }, 100);
     };
 
-    game = new Game(canvas.width, canvas.height);      
+    game = new Game(canvas.width, canvas.height);
     let lastime = 0;
     async function animate(timestamp){
         const deltatime = timestamp - lastime;
+	if(game.player.isAllowedToMove) game.timer += deltatime;
         lastime = timestamp;
         ctx.clearRect(0,0, canvas.width, canvas.height);
         game.update(deltatime);

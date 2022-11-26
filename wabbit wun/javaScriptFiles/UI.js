@@ -34,7 +34,7 @@ class UI{
         context.font = 40 + 'px ' + this.fontFamily;
         context.textAlign = 'left';
         context.fillStyle = 'rgb(57, 255, 20)';
-        context.fillText('Time: ' + ((new Date() - this.time - this.pausedTimerOffset) * 0.001).toFixed(1), 20, 90);
+        context.fillText('Time: ' + (this.game.timer * 0.001).toFixed(1), 20, 90);
 
         context.font = 40 + 'px ' + this.fontFamily;
         context.textAlign = 'left';
@@ -77,8 +77,13 @@ class UI{
                 context.textAlign = 'center';
                 context.fillStyle = message.color;
                 
-                //id undefined means its player ge ona, geona, g on a
-                const {x, y, width} = (message.id === '')? this.game.player : this.game.enemies.find(enemy => enemy.id === message.id);
+                const object = (message.id === 'Player')? this.game.player : this.game.enemies.find(enemy => enemy.id === message.id);
+                if(object){
+                    var {x, y, width} = object;
+
+                }else{
+                    var {x, y, width} = message;
+                }
                 messageRow[message.id] = (messageRow[message.id] !== undefined)? messageRow[message.id] + 1:0;
                 context.fillText(message.text, x + width / 2, y + messageRow[message.id] * messageSize);
             }

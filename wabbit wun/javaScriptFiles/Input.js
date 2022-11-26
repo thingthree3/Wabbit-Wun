@@ -1,7 +1,7 @@
 class InputHandler{
     constructor(){
         this.debug = false;
-        this.isPaused = false;
+        this.isPaused = true;
         this.vaildKeys = {'w':'up', 'd':'right', 'a':'left', 'ArrowUp':'up', 'ArrowRight':'right', 'ArrowLeft':'left', ' ':'dash', 'x':'attack'};
         this.keys = {up:false, down:false, right:false, left:false, dash:false, attack:false};
 
